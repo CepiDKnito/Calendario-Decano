@@ -13,7 +13,7 @@
             color: #333;
         }
         .container { 
-            max-width: 900px;
+            max-width: 900px; 
             margin: 0 auto; 
             background: white; 
             padding: 30px; 
@@ -43,6 +43,7 @@
             font-size: 22px;
             text-transform: capitalize;
         }
+        
         
         .weekdays {
             display: grid;
@@ -100,9 +101,9 @@
             font-weight: bold;
         }
 
+       
         .match-box {
             background-color: #f8f9fa;
-            border-left: 4px solid #0072ce;
             border-radius: 4px;
             padding: 6px;
             font-size: 11px;
@@ -112,16 +113,67 @@
             font-weight: bold;
             display: block;
             margin-bottom: 4px;
-            color: #222;
         }
         .match-box .time {
             display: inline-block;
-            background: #e9ecef;
-            color: #495057;
+            background: rgba(128, 128, 128, 0.2);
+            color: inherit;
             padding: 2px 6px;
             border-radius: 4px;
             font-weight: bold;
         }
+
+        
+        .copa-badge {
+            background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 1px solid #aa771c;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+       
+        .bg-tucuman { background-color: #b3dbff; color: #000; border-left: 4px solid #ffcc00 !important; }
+        .bg-boca { background-color: #004b87; color: #fff; border-left: 4px solid #ffcc00 !important; }
+        .bg-huracan { background-color: #ffffff; color: #000; border: 1px solid #ccc; border-left: 4px solid #da291c !important; }
+        .bg-colon { background: linear-gradient(135deg, #da291c 50%, #000000 50%); color: #fff; border-left: 4px solid #000 !important; }
+        
+        .bg-river { 
+            background: linear-gradient(135deg, #ffffff 38%, #da291c 38%, #da291c 55%, #ffffff 55%); 
+            color: #000; 
+            border: 1px solid #ccc; 
+            border-left: 4px solid #da291c !important; 
+        }
+        .bg-racing { 
+            background: repeating-linear-gradient(90deg, #75b2dd, #75b2dd 12px, #ffffff 12px, #ffffff 24px); 
+            color: #000; 
+            border: 1px solid #ccc; 
+            border-left: 4px solid #ffffff !important; 
+        }
+
+        .bg-river .rival, .bg-racing .rival {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 2px 5px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        
+        .crossover-text {
+            color: #ffffff !important;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .crossover-time {
+            background: rgba(0,0,0,0.6) !important;
+            color: #ffffff !important;
+            text-shadow: none;
+        }
+
         .loading { 
             color: #666; 
             font-style: italic; 
@@ -147,12 +199,38 @@
                 <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
             </div>
             <div class="calendar-grid" id="calendar-grid">
-                
+               
             </div>
         </div>
     </div>
 
     <script>
+        const baseColors = {
+            'tucuman': '#b3dbff',
+            'boca': '#004b87',
+            'river': '#da291c', 
+            'huracan': '#ffffff',
+            'colon': '#000000', 
+            'racing': '#75b2dd' 
+        };
+
+        const equiposCrew = ['Atlético Tucumán', 'Atletico Tucuman', 'Boca', 'River', 'Huracán', 'Huracan', 'Colón', 'Colon', 'Racing'];
+
+        function identificarEquipo(nombreString) {
+            if (!nombreString) return null;
+            const nom = nombreString.toLowerCase();
+            
+            if (nom.includes('atlético tucumán') || nom.includes('atletico tucuman')) return 'tucuman';
+            if (nom.includes('boca')) return 'boca';
+            if (nom.includes('river')) return 'river';
+            if (nom.includes('huracán') || nom.includes('huracan')) return 'huracan';
+            if (nom.includes('colón') || nom.includes('colon')) return 'colon';
+            
+            if (nom.includes('racing') && !nom.includes('córdoba') && !nom.includes('cordoba')) return 'racing';
+            
+            return null;
+        }
+
         async function armarCalendario() {
             const mensajeCarga = document.getElementById('mensaje-carga');
             const contenedorCalendario = document.getElementById('calendar-container');
@@ -161,18 +239,32 @@
             
             try {
                 const fechas = '?dates=20260801-20261231';
-                const [resLiga, resCopa] = await Promise.all([
+                
+                const [resLiga, resCopa, resNacional] = await Promise.all([
                     fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) })),
-                    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.copa/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) }))
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.copa/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) })),
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.2/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) }))
                 ]);
 
                 const datosLiga = await resLiga.json();
                 const datosCopa = await resCopa.json();
-                const todosLosEventos = [...(datosLiga.events || []), ...(datosCopa.events || [])];
+                const datosNacional = await resNacional.json();
+                
+                
+                const eventosLiga = (datosLiga.events || []).map(e => ({ ...e, esCopa: false }));
+                const eventosCopa = (datosCopa.events || []).map(e => ({ ...e, esCopa: true }));
+                const eventosNacional = (datosNacional.events || []).map(e => ({ ...e, esCopa: false }));
 
-                const equiposCrew = ['Tucumán', 'Tucuman', 'Boca', 'River', 'Racing', 'Huracán', 'Huracan', 'Colón', 'Colon'];
+                const todosLosEventos = [...eventosLiga, ...eventosCopa, ...eventosNacional];
+
                 
                 const partidosCrew = todosLosEventos.filter(evento => {
+                    const nombre = evento.name.toLowerCase();
+                    
+                    if (nombre.includes('san martín') || nombre.includes('san martin')) return false;
+                   
+                    if (nombre.includes('racing') && (nombre.includes('córdoba') || nombre.includes('cordoba') || nombre.includes('cba'))) return false;
+                    
                     return equiposCrew.some(equipo => evento.name.includes(equipo));
                 });
 
@@ -218,21 +310,51 @@
                         partidosDelDia.forEach(partido => {
                             const nombreAPI = partido.name;
                             let infoRival = "";
+                            let localName = "";
+                            let visitanteName = "";
 
                             if (nombreAPI.includes(' at ')) {
                                 const equipos = nombreAPI.split(' at ');
-                                infoRival = `${equipos[1]} vs ${equipos[0]}`;
+                                visitanteName = equipos[0];
+                                localName = equipos[1];
+                                infoRival = `${localName} vs ${visitanteName}`;
                             } else {
                                 infoRival = nombreAPI.replace(' at ', ' vs '); 
+                                localName = infoRival;
+                                visitanteName = infoRival;
+                            }
+
+                            const equipoLocal = identificarEquipo(localName);
+                            const equipoVisitante = identificarEquipo(visitanteName);
+
+                            let claseFondo = 'match-box';
+                            let estiloInline = '';
+                            let extraTextClass = 'rival';
+                            let extraTimeClass = 'time';
+
+                            if (equipoLocal && equipoVisitante) {
+                                estiloInline = `background: linear-gradient(90deg, ${baseColors[equipoLocal]} 50%, ${baseColors[equipoVisitante]} 50%); border-left: 4px solid ${baseColors[equipoLocal]};`;
+                                extraTextClass += ' crossover-text';
+                                extraTimeClass += ' crossover-time';
+                            } else if (equipoLocal || equipoVisitante) {
+                                const eq = equipoLocal || equipoVisitante;
+                                claseFondo += ` bg-${eq}`;
                             }
 
                             const hora = new Date(partido.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
                             const divPartido = document.createElement('div');
-                            divPartido.className = `match-box`;
+                            divPartido.className = claseFondo;
+                            if (estiloInline) divPartido.style.cssText = estiloInline;
+                            
+                            const badgeCopa = partido.esCopa ? `<span class="copa-badge">🏆 Copa Arg</span>` : '';
+
                             divPartido.innerHTML = `
-                                <span class="rival">${infoRival}</span>
-                                <span class="time">⏰ ${hora}</span>
+                                <span class="${extraTextClass}">${infoRival}</span>
+                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 4px;">
+                                    <span class="${extraTimeClass}">⏰ ${hora}</span>
+                                    ${badgeCopa}
+                                </div>
                             `;
                             
                             celda.appendChild(divPartido);
