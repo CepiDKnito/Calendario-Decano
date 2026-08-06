@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendario - Club Atlético Tucumán</title>
+    <title>Calendario - Decanos Crew</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -13,7 +13,7 @@
             color: #333;
         }
         .container { 
-            max-width: 800px; 
+            max-width: 900px;
             margin: 0 auto; 
             background: white; 
             padding: 30px; 
@@ -24,29 +24,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             margin-bottom: 20px;
         }
         .escudo-fallback {
             font-size: 50px;
         }
         h1 { 
-            color: #0072ce; 
+            color: #1a1a1a; 
             margin: 0;
-            font-size: 28px;
+            font-size: 32px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         h2 {
-            color: #75b2dd;
+            color: #0072ce;
             margin-top: 5px;
             font-size: 22px;
             text-transform: capitalize;
         }
         
-        /* Estilos de la grilla */
         .weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            background-color: #0072ce;
+            background-color: #1a1a1a; 
             color: white;
             font-weight: bold;
             padding: 10px 0;
@@ -59,13 +60,16 @@
             border-top: 1px solid #ddd;
         }
         .day-cell {
-            min-height: 100px;
+            min-height: 110px;
             border-right: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
             padding: 5px;
             text-align: left;
             position: relative;
             background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         .empty-cell {
             background-color: #f9f9f9;
@@ -74,11 +78,10 @@
             font-weight: bold;
             color: #888;
             font-size: 14px;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             display: block;
         }
         
-        /* ESTILOS PARA EL DÍA DE HOY */
         .today {
             background-color: #fffdf0;
             border: 2px solid #ffc107;
@@ -97,31 +100,27 @@
             font-weight: bold;
         }
 
-        /* Estilo cuando hay partido */
         .match-box {
-            background-color: #e6f2ff;
+            background-color: #f8f9fa;
             border-left: 4px solid #0072ce;
-            padding: 5px;
             border-radius: 4px;
-            font-size: 12px;
-            margin-top: 2px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .match-box.local {
-            background-color: #0072ce;
-            color: white;
-            border-left: 4px solid #004b87;
+            padding: 6px;
+            font-size: 11px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .match-box .rival {
             font-weight: bold;
             display: block;
-            margin: 3px 0;
+            margin-bottom: 4px;
+            color: #222;
         }
         .match-box .time {
             display: inline-block;
-            background: rgba(0,0,0,0.1);
-            padding: 2px 5px;
-            border-radius: 3px;
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
         }
         .loading { 
             color: #666; 
@@ -134,22 +133,21 @@
 
     <div class="container">
         <div class="header">
-            <!-- Usamos un emoji como logo para que jamás se rompa sin internet -->
-            <div class="escudo-fallback">⚽</div>
+            <div class="escudo-fallback">🎮⚽</div>
             <div>
-                <h1>Calendario del Decano</h1>
+                <h1>Calendario de Decanos Crew</h1>
                 <h2 id="mes-titulo">Cargando mes...</h2>
             </div>
         </div>
         
-        <p id="mensaje-carga" class="loading">Actualizando fixture desde ESPN...</p>
+        <p id="mensaje-carga" class="loading">Actualizando fixture desde ESPN para toda la Crew...</p>
         
         <div id="calendar-container" style="display: none;">
             <div class="weekdays">
                 <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
             </div>
             <div class="calendar-grid" id="calendar-grid">
-                <!-- JavaScript va a generar los cuadraditos de los días acá -->
+                
             </div>
         </div>
     </div>
@@ -172,9 +170,11 @@
                 const datosCopa = await resCopa.json();
                 const todosLosEventos = [...(datosLiga.events || []), ...(datosCopa.events || [])];
 
-                const partidosTucuman = todosLosEventos.filter(evento => 
-                    evento.name.includes('Tucumán') || evento.name.includes('Tucuman')
-                );
+                const equiposCrew = ['Tucumán', 'Tucuman', 'Boca', 'River', 'Racing', 'Huracán', 'Huracan', 'Colón', 'Colon'];
+                
+                const partidosCrew = todosLosEventos.filter(evento => {
+                    return equiposCrew.some(equipo => evento.name.includes(equipo));
+                });
 
                 const fechaHoy = new Date();
                 const anio = fechaHoy.getFullYear();
@@ -198,51 +198,45 @@
                     const celda = document.createElement('div');
                     celda.className = 'day-cell';
                     
-                    // LÓGICA PARA DETECTAR EL DÍA DE HOY
                     const esHoy = (dia === fechaHoy.getDate() && mes === fechaHoy.getMonth() && anio === fechaHoy.getFullYear());
                     
                     let contenidoCelda = `<span class="day-number">${dia}</span>`;
                     
                     if (esHoy) {
-                        celda.classList.add('today'); // Le agregamos la clase que le da color
-                        contenidoCelda += `<span class="today-badge">📍 HOY</span>`; // Le inyectamos el cartel
+                        celda.classList.add('today');
+                        contenidoCelda += `<span class="today-badge">📍 HOY</span>`; 
                     }
                     
                     celda.innerHTML = contenidoCelda;
 
-                    const partidoDelDia = partidosTucuman.find(partido => {
+                    const partidosDelDia = partidosCrew.filter(partido => {
                         const fechaPartido = new Date(partido.date);
                         return fechaPartido.getDate() === dia && fechaPartido.getMonth() === mes;
                     });
 
-                    if (partidoDelDia) {
-                        const nombreAPI = partidoDelDia.name;
-                        let esLocal = false;
-                        let infoRival = "";
+                    if (partidosDelDia.length > 0) {
+                        partidosDelDia.forEach(partido => {
+                            const nombreAPI = partido.name;
+                            let infoRival = "";
 
-                        if (nombreAPI.includes(' at ')) {
-                            const equipos = nombreAPI.split(' at ');
-                            if (equipos[0].includes('Tucumán') || equipos[0].includes('Tucuman')) {
-                                esLocal = false;
-                                infoRival = "✈️ vs " + equipos[1];
+                            if (nombreAPI.includes(' at ')) {
+                                const equipos = nombreAPI.split(' at ');
+                                infoRival = `${equipos[1]} vs ${equipos[0]}`;
                             } else {
-                                esLocal = true;
-                                infoRival = "🏟️ vs " + equipos[0];
+                                infoRival = nombreAPI.replace(' at ', ' vs '); 
                             }
-                        } else {
-                            infoRival = nombreAPI; 
-                        }
 
-                        const hora = new Date(partidoDelDia.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                            const hora = new Date(partido.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-                        const divPartido = document.createElement('div');
-                        divPartido.className = `match-box ${esLocal ? 'local' : ''}`;
-                        divPartido.innerHTML = `
-                            <span class="rival">${infoRival}</span>
-                            <span class="time">⏰ ${hora}</span>
-                        `;
-                        
-                        celda.appendChild(divPartido);
+                            const divPartido = document.createElement('div');
+                            divPartido.className = `match-box`;
+                            divPartido.innerHTML = `
+                                <span class="rival">${infoRival}</span>
+                                <span class="time">⏰ ${hora}</span>
+                            `;
+                            
+                            celda.appendChild(divPartido);
+                        });
                     }
 
                     grid.appendChild(celda);
