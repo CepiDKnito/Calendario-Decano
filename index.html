@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendario - Decanos Crew</title>
+    <title>Calendario - Decano</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -37,14 +37,37 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 5px;
+        }
         h2 {
             color: #0072ce;
-            margin-top: 5px;
+            margin: 0;
             font-size: 22px;
             text-transform: capitalize;
+            min-width: 180px; 
         }
-        
-        
+        .nav-btn {
+            background-color: #0072ce;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 35px;
+            height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-btn:hover { background-color: #005a9e; }
+        .nav-btn:active { transform: scale(0.95); }
         .weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -82,7 +105,9 @@
             margin-bottom: 2px;
             display: block;
         }
-        
+        .mobile-date {
+            display: none; 
+        }
         .today {
             background-color: #fffdf0;
             border: 2px solid #ffc107;
@@ -100,14 +125,17 @@
             border-radius: 10px;
             font-weight: bold;
         }
-
-       
         .match-box {
             background-color: #f8f9fa;
             border-radius: 4px;
             padding: 6px;
             font-size: 11px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .match-box .rival {
             font-weight: bold;
@@ -122,8 +150,6 @@
             border-radius: 4px;
             font-weight: bold;
         }
-
-        
         .copa-badge {
             background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7);
             color: #000;
@@ -136,13 +162,10 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
             white-space: nowrap;
         }
-
-       
         .bg-tucuman { background-color: #b3dbff; color: #000; border-left: 4px solid #ffcc00 !important; }
         .bg-boca { background-color: #004b87; color: #fff; border-left: 4px solid #ffcc00 !important; }
         .bg-huracan { background-color: #ffffff; color: #000; border: 1px solid #ccc; border-left: 4px solid #da291c !important; }
         .bg-colon { background: linear-gradient(135deg, #da291c 50%, #000000 50%); color: #fff; border-left: 4px solid #000 !important; }
-        
         .bg-river { 
             background: linear-gradient(135deg, #ffffff 38%, #da291c 38%, #da291c 55%, #ffffff 55%); 
             color: #000; 
@@ -155,15 +178,12 @@
             border: 1px solid #ccc; 
             border-left: 4px solid #ffffff !important; 
         }
-
         .bg-river .rival, .bg-racing .rival {
             background: rgba(255, 255, 255, 0.85);
             padding: 2px 5px;
             border-radius: 4px;
             display: inline-block;
         }
-
-        
         .crossover-text {
             color: #ffffff !important;
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8);
@@ -173,11 +193,43 @@
             color: #ffffff !important;
             text-shadow: none;
         }
-
         .loading { 
             color: #666; 
             font-style: italic; 
             margin-top: 20px; 
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            h1 { font-size: 24px; }
+            h2 { font-size: 18px; }
+            .escudo-fallback { font-size: 35px; }
+            .weekdays { display: none; }
+            .calendar-grid { 
+                display: flex; 
+                flex-direction: column; 
+                border: none; 
+                gap: 12px; 
+            }
+            .day-cell { 
+                border: 1px solid #ddd; 
+                border-radius: 10px; 
+                padding: 12px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                min-height: auto;
+            }
+            .day-number {
+                font-size: 16px;
+                color: #0072ce;
+                border-bottom: 2px solid #eee;
+                padding-bottom: 5px;
+                margin-bottom: 8px;
+            }
+            .desktop-date { display: none !important; }
+            .mobile-date { display: block !important; text-transform: capitalize; }
+            .empty-cell, .hide-on-mobile { display: none !important; }
+            .match-box { font-size: 13px; padding: 10px; }
+            .copa-badge { font-size: 10px; }
         }
     </style>
 </head>
@@ -187,19 +239,22 @@
         <div class="header">
             <div class="escudo-fallback">🎮⚽</div>
             <div>
-                <h1>Calendario de Decanos Crew</h1>
-                <h2 id="mes-titulo">Cargando mes...</h2>
+                <h1>Calendario Decano</h1>
+                <div class="nav-container">
+                    <button id="btn-prev" class="nav-btn" title="Mes Anterior">❮</button>
+                    <h2 id="mes-titulo">Cargando...</h2>
+                    <button id="btn-next" class="nav-btn" title="Mes Siguiente">❯</button>
+                </div>
             </div>
         </div>
         
-        <p id="mensaje-carga" class="loading">Actualizando fixture desde ESPN para toda la Crew...</p>
+        <p id="mensaje-carga" class="loading">Actualizando fixture desde ESPN...</p>
         
         <div id="calendar-container" style="display: none;">
             <div class="weekdays">
                 <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
             </div>
             <div class="calendar-grid" id="calendar-grid">
-               
             </div>
         </div>
     </div>
@@ -225,20 +280,54 @@
             if (nom.includes('river')) return 'river';
             if (nom.includes('huracán') || nom.includes('huracan')) return 'huracan';
             if (nom.includes('colón') || nom.includes('colon')) return 'colon';
-            
             if (nom.includes('racing') && !nom.includes('córdoba') && !nom.includes('cordoba')) return 'racing';
             
             return null;
         }
 
-        async function armarCalendario() {
+        const fechaHoy = new Date();
+        let mesMostrado = fechaHoy.getMonth();
+        let anioMostrado = fechaHoy.getFullYear();
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            mesMostrado--;
+            if (mesMostrado < 0) {
+                mesMostrado = 11;
+                anioMostrado--;
+            }
+            cargarDatosYGrilla();
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            mesMostrado++;
+            if (mesMostrado > 11) {
+                mesMostrado = 0;
+                anioMostrado++;
+            }
+            cargarDatosYGrilla();
+        });
+
+        async function cargarDatosYGrilla() {
             const mensajeCarga = document.getElementById('mensaje-carga');
             const contenedorCalendario = document.getElementById('calendar-container');
             const grid = document.getElementById('calendar-grid');
             const tituloMes = document.getElementById('mes-titulo');
             
+            const fechaNav = new Date(anioMostrado, mesMostrado, 1);
+            const opcionesMes = { month: 'long', year: 'numeric' };
+            tituloMes.innerText = fechaNav.toLocaleDateString('es-AR', opcionesMes);
+
+            contenedorCalendario.style.display = 'none';
+            mensajeCarga.style.display = 'block';
+            grid.innerHTML = '';
+            
             try {
-                const fechas = '?dates=20260801-20261231';
+                const strMes = (mesMostrado + 1).toString().padStart(2, '0');
+                const diasEnElMes = new Date(anioMostrado, mesMostrado + 1, 0).getDate();
+                const fechaInicio = `${anioMostrado}${strMes}01`;
+                const fechaFin = `${anioMostrado}${strMes}${diasEnElMes}`;
+                
+                const fechas = `?dates=${fechaInicio}-${fechaFin}`;
                 
                 const [resLiga, resCopa, resNacional] = await Promise.all([
                     fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) })),
@@ -250,36 +339,22 @@
                 const datosCopa = await resCopa.json();
                 const datosNacional = await resNacional.json();
                 
-                
                 const eventosLiga = (datosLiga.events || []).map(e => ({ ...e, esCopa: false }));
                 const eventosCopa = (datosCopa.events || []).map(e => ({ ...e, esCopa: true }));
                 const eventosNacional = (datosNacional.events || []).map(e => ({ ...e, esCopa: false }));
 
                 const todosLosEventos = [...eventosLiga, ...eventosCopa, ...eventosNacional];
 
-                
-                const partidosCrew = todosLosEventos.filter(evento => {
+                const partidosDelMes = todosLosEventos.filter(evento => {
                     const nombre = evento.name.toLowerCase();
-                    
                     if (nombre.includes('san martín') || nombre.includes('san martin')) return false;
-                   
                     if (nombre.includes('racing') && (nombre.includes('córdoba') || nombre.includes('cordoba') || nombre.includes('cba'))) return false;
                     
                     return equiposCrew.some(equipo => evento.name.includes(equipo));
                 });
 
-                const fechaHoy = new Date();
-                const anio = fechaHoy.getFullYear();
-                const mes = fechaHoy.getMonth(); 
-                
-                const opcionesMes = { month: 'long', year: 'numeric' };
-                tituloMes.innerText = fechaHoy.toLocaleDateString('es-AR', opcionesMes);
+                const primerDiaDelMes = new Date(anioMostrado, mesMostrado, 1).getDay();
 
-                const primerDiaDelMes = new Date(anio, mes, 1).getDay();
-                const diasEnElMes = new Date(anio, mes + 1, 0).getDate();
-
-                grid.innerHTML = '';
-                
                 for (let i = 0; i < primerDiaDelMes; i++) {
                     const celdaVacia = document.createElement('div');
                     celdaVacia.className = 'day-cell empty-cell';
@@ -290,9 +365,16 @@
                     const celda = document.createElement('div');
                     celda.className = 'day-cell';
                     
-                    const esHoy = (dia === fechaHoy.getDate() && mes === fechaHoy.getMonth() && anio === fechaHoy.getFullYear());
+                    const esHoy = (dia === fechaHoy.getDate() && mesMostrado === fechaHoy.getMonth() && anioMostrado === fechaHoy.getFullYear());
                     
-                    let contenidoCelda = `<span class="day-number">${dia}</span>`;
+                    const fechaCasillero = new Date(anioMostrado, mesMostrado, dia);
+                    let fechaLarga = fechaCasillero.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+                    fechaLarga = fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1);
+                    
+                    let contenidoCelda = `
+                        <span class="day-number desktop-date">${dia}</span>
+                        <span class="day-number mobile-date">${fechaLarga}</span>
+                    `;
                     
                     if (esHoy) {
                         celda.classList.add('today');
@@ -301,27 +383,38 @@
                     
                     celda.innerHTML = contenidoCelda;
 
-                    const partidosDelDia = partidosCrew.filter(partido => {
+                    const partidosDelDia = partidosDelMes.filter(partido => {
                         const fechaPartido = new Date(partido.date);
-                        return fechaPartido.getDate() === dia && fechaPartido.getMonth() === mes;
+                        return fechaPartido.getDate() === dia && fechaPartido.getMonth() === mesMostrado;
                     });
 
                     if (partidosDelDia.length > 0) {
                         partidosDelDia.forEach(partido => {
-                            const nombreAPI = partido.name;
-                            let infoRival = "";
-                            let localName = "";
-                            let visitanteName = "";
+                            const competidores = partido.competitions[0].competitors;
+                            const home = competidores.find(c => c.homeAway === 'home') || competidores[0];
+                            const away = competidores.find(c => c.homeAway === 'away') || competidores[1];
 
-                            if (nombreAPI.includes(' at ')) {
-                                const equipos = nombreAPI.split(' at ');
-                                visitanteName = equipos[0];
-                                localName = equipos[1];
+                            const localName = home.team.name;
+                            const visitanteName = away.team.name;
+                            const estado = partido.status.type.state;
+                            const statusNombre = partido.status.type.name;
+
+                            let infoRival = "";
+                            let textoTiempo = "";
+                            const hora = new Date(partido.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+                            if (estado === 'post' || partido.status.type.completed) {
+                                infoRival = `${localName} ${home.score} - ${away.score} ${visitanteName}`;
+                                textoTiempo = `✅ Final`;
+                            } else if (estado === 'in') {
+                                infoRival = `${localName} ${home.score} - ${away.score} ${visitanteName}`;
+                                textoTiempo = `🔴 En Vivo`;
+                            } else if (statusNombre && (statusNombre.includes('POSTPONED') || statusNombre.includes('CANCELED'))) {
                                 infoRival = `${localName} vs ${visitanteName}`;
+                                textoTiempo = `⚠️ Suspendido`;
                             } else {
-                                infoRival = nombreAPI.replace(' at ', ' vs '); 
-                                localName = infoRival;
-                                visitanteName = infoRival;
+                                infoRival = `${localName} vs ${visitanteName}`;
+                                textoTiempo = `⏰ ${hora}`;
                             }
 
                             const equipoLocal = identificarEquipo(localName);
@@ -341,8 +434,6 @@
                                 claseFondo += ` bg-${eq}`;
                             }
 
-                            const hora = new Date(partido.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-
                             const divPartido = document.createElement('div');
                             divPartido.className = claseFondo;
                             if (estiloInline) divPartido.style.cssText = estiloInline;
@@ -352,13 +443,17 @@
                             divPartido.innerHTML = `
                                 <span class="${extraTextClass}">${infoRival}</span>
                                 <div style="display: flex; gap: 5px; align-items: center; margin-top: 4px;">
-                                    <span class="${extraTimeClass}">⏰ ${hora}</span>
+                                    <span class="${extraTimeClass}">${textoTiempo}</span>
                                     ${badgeCopa}
                                 </div>
                             `;
                             
                             celda.appendChild(divPartido);
                         });
+                    } else {
+                        if (!esHoy) {
+                            celda.classList.add('hide-on-mobile');
+                        }
                     }
 
                     grid.appendChild(celda);
@@ -373,7 +468,7 @@
             }
         }
 
-        armarCalendario();
+        cargarDatosYGrilla();
     </script>
 </body>
 </html>
