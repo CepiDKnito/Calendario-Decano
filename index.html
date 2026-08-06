@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario - Club Atlético Tucumán</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #eef2f5; 
+            text-align: center; 
+            padding: 20px; 
+            color: #333;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .escudo-fallback {
+            font-size: 50px;
+        }
+        h1 { 
+            color: #0072ce; 
+            margin: 0;
+            font-size: 28px;
+        }
+        h2 {
+            color: #75b2dd;
+            margin-top: 5px;
+            font-size: 22px;
+            text-transform: capitalize;
+        }
+        
+        /* Estilos de la grilla */
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background-color: #0072ce;
+            color: white;
+            font-weight: bold;
+            padding: 10px 0;
+            border-radius: 10px 10px 0 0;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-left: 1px solid #ddd;
+            border-top: 1px solid #ddd;
+        }
+        .day-cell {
+            min-height: 100px;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+            position: relative;
+            background-color: #fff;
+        }
+        .empty-cell {
+            background-color: #f9f9f9;
+        }
+        .day-number {
+            font-weight: bold;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        /* ESTILOS PARA EL DÍA DE HOY */
+        .today {
+            background-color: #fffdf0;
+            border: 2px solid #ffc107;
+            box-shadow: inset 0 0 10px rgba(255, 193, 7, 0.2);
+            z-index: 1;
+        }
+        .today-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ffc107;
+            color: #333;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Estilo cuando hay partido */
+        .match-box {
+            background-color: #e6f2ff;
+            border-left: 4px solid #0072ce;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .match-box.local {
+            background-color: #0072ce;
+            color: white;
+            border-left: 4px solid #004b87;
+        }
+        .match-box .rival {
+            font-weight: bold;
+            display: block;
+            margin: 3px 0;
+        }
+        .match-box .time {
+            display: inline-block;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .loading { 
+            color: #666; 
+            font-style: italic; 
+            margin-top: 20px; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <!-- Usamos un emoji como logo para que jamás se rompa sin internet -->
+            <div class="escudo-fallback">⚽</div>
+            <div>
+                <h1>Calendario del Decano</h1>
+                <h2 id="mes-titulo">Cargando mes...</h2>
+            </div>
+        </div>
+        
+        <p id="mensaje-carga" class="loading">Actualizando fixture desde ESPN...</p>
+        
+        <div id="calendar-container" style="display: none;">
+            <div class="weekdays">
+                <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- JavaScript va a generar los cuadraditos de los días acá -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function armarCalendario() {
+            const mensajeCarga = document.getElementById('mensaje-carga');
+            const contenedorCalendario = document.getElementById('calendar-container');
+            const grid = document.getElementById('calendar-grid');
+            const tituloMes = document.getElementById('mes-titulo');
+            
+            try {
+                const fechas = '?dates=20260801-20261231';
+                const [resLiga, resCopa] = await Promise.all([
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) })),
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/arg.copa/scoreboard' + fechas).catch(() => ({ json: () => ({ events: [] }) }))
+                ]);
+
+                const datosLiga = await resLiga.json();
+                const datosCopa = await resCopa.json();
+                const todosLosEventos = [...(datosLiga.events || []), ...(datosCopa.events || [])];
+
+                const partidosTucuman = todosLosEventos.filter(evento => 
+                    evento.name.includes('Tucumán') || evento.name.includes('Tucuman')
+                );
+
+                const fechaHoy = new Date();
+                const anio = fechaHoy.getFullYear();
+                const mes = fechaHoy.getMonth(); 
+                
+                const opcionesMes = { month: 'long', year: 'numeric' };
+                tituloMes.innerText = fechaHoy.toLocaleDateString('es-AR', opcionesMes);
+
+                const primerDiaDelMes = new Date(anio, mes, 1).getDay();
+                const diasEnElMes = new Date(anio, mes + 1, 0).getDate();
+
+                grid.innerHTML = '';
+                
+                for (let i = 0; i < primerDiaDelMes; i++) {
+                    const celdaVacia = document.createElement('div');
+                    celdaVacia.className = 'day-cell empty-cell';
+                    grid.appendChild(celdaVacia);
+                }
+
+                for (let dia = 1; dia <= diasEnElMes; dia++) {
+                    const celda = document.createElement('div');
+                    celda.className = 'day-cell';
+                    
+                    // LÓGICA PARA DETECTAR EL DÍA DE HOY
+                    const esHoy = (dia === fechaHoy.getDate() && mes === fechaHoy.getMonth() && anio === fechaHoy.getFullYear());
+                    
+                    let contenidoCelda = `<span class="day-number">${dia}</span>`;
+                    
+                    if (esHoy) {
+                        celda.classList.add('today'); // Le agregamos la clase que le da color
+                        contenidoCelda += `<span class="today-badge">📍 HOY</span>`; // Le inyectamos el cartel
+                    }
+                    
+                    celda.innerHTML = contenidoCelda;
+
+                    const partidoDelDia = partidosTucuman.find(partido => {
+                        const fechaPartido = new Date(partido.date);
+                        return fechaPartido.getDate() === dia && fechaPartido.getMonth() === mes;
+                    });
+
+                    if (partidoDelDia) {
+                        const nombreAPI = partidoDelDia.name;
+                        let esLocal = false;
+                        let infoRival = "";
+
+                        if (nombreAPI.includes(' at ')) {
+                            const equipos = nombreAPI.split(' at ');
+                            if (equipos[0].includes('Tucumán') || equipos[0].includes('Tucuman')) {
+                                esLocal = false;
+                                infoRival = "✈️ vs " + equipos[1];
+                            } else {
+                                esLocal = true;
+                                infoRival = "🏟️ vs " + equipos[0];
+                            }
+                        } else {
+                            infoRival = nombreAPI; 
+                        }
+
+                        const hora = new Date(partidoDelDia.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+                        const divPartido = document.createElement('div');
+                        divPartido.className = `match-box ${esLocal ? 'local' : ''}`;
+                        divPartido.innerHTML = `
+                            <span class="rival">${infoRival}</span>
+                            <span class="time">⏰ ${hora}</span>
+                        `;
+                        
+                        celda.appendChild(divPartido);
+                    }
+
+                    grid.appendChild(celda);
+                }
+
+                mensajeCarga.style.display = 'none';
+                contenedorCalendario.style.display = 'block';
+
+            } catch (error) {
+                mensajeCarga.style.color = "red";
+                mensajeCarga.innerText = 'Error al cargar el calendario: ' + error.message;
+            }
+        }
+
+        armarCalendario();
+    </script>
+</body>
+</html>
